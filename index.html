@@ -1,0 +1,1092 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>捏捏臉｜我的臉我來捏</title>
+
+<style>
+* { box-sizing: border-box; }
+
+:root {
+  --bg: #fff9f4;
+  --ink: #302d2b;
+  --accent: #ff8d76;
+  --soft: #ffe7dc;
+}
+
+body {
+  margin: 0;
+  font-family: "Microsoft JhengHei", sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+button, select { font: inherit; }
+
+button {
+  border: none;
+  cursor: pointer;
+  transition: transform .15s, background .15s;
+}
+
+button:hover { transform: translateY(-2px); }
+
+button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.page {
+  display: none;
+  min-height: 100vh;
+}
+
+.page.active { display: flex; }
+
+#home-page {
+  align-items: center;
+  justify-content: center;
+  padding: 36px 20px;
+  text-align: center;
+  background:
+    radial-gradient(circle at 15% 20%, #ffe6d9 0, transparent 28%),
+    radial-gradient(circle at 85% 80%, #f8e2f0 0, transparent 30%),
+    var(--bg);
+}
+
+.home-content { width: min(680px, 100%); }
+
+.home-mark {
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 26px;
+  border-radius: 35px;
+  background: #ffb6a4;
+  display: grid;
+  place-items: center;
+  font-size: 48px;
+  transform: rotate(-7deg);
+}
+
+.home-title {
+  font-size: clamp(42px, 8vw, 76px);
+  letter-spacing: -3px;
+  margin: 0;
+}
+
+.home-title span, .brand span { color: var(--accent); }
+
+.home-description {
+  font-size: 17px;
+  line-height: 1.9;
+  color: #79716d;
+  margin: 22px 0 30px;
+}
+
+.primary-button {
+  background: var(--ink);
+  color: white;
+  padding: 16px 30px;
+  border-radius: 999px;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.primary-button:hover { background: var(--accent); }
+
+.home-note {
+  margin-top: 24px;
+  color: #928983;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+#work-page {
+  flex-direction: column;
+  padding: 22px;
+  gap: 18px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.brand { font-size: 22px; font-weight: 900; }
+
+.small-button {
+  background: white;
+  border: 1px solid #e9ddd5;
+  border-radius: 999px;
+  padding: 10px 16px;
+  color: var(--ink);
+}
+
+.work-title {
+  margin: 4px 0 0;
+  font-size: clamp(26px, 5vw, 38px);
+}
+
+.work-description {
+  margin: 8px 0 0;
+  color: #817771;
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 270px;
+  gap: 18px;
+  align-items: start;
+}
+
+.camera-panel {
+  min-width: 0;
+  background: white;
+  border: 1px solid #f0e3db;
+  padding: 12px;
+  border-radius: 24px;
+  box-shadow: 0 10px 35px #4933280a;
+}
+
+.camera-stage {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #eee7e1;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+}
+
+#output-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.camera-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  color: #82756d;
+  line-height: 1.9;
+  pointer-events: none;
+}
+
+.camera-placeholder.hidden { display: none; }
+
+.camera-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #817771;
+  padding: 13px 4px 3px;
+  line-height: 1.6;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d6c9bf;
+  flex: 0 0 auto;
+}
+
+.status-dot.ready { background: #55b98b; }
+
+.control-panel {
+  background: white;
+  border: 1px solid #f0e3db;
+  border-radius: 24px;
+  padding: 20px;
+}
+
+.control-section + .control-section {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #f0e8e2;
+}
+
+.control-heading {
+  font-size: 15px;
+  font-weight: bold;
+  margin: 0 0 12px;
+}
+
+.control-hint {
+  color: #928780;
+  font-size: 12px;
+  line-height: 1.7;
+  margin: 10px 0 0;
+}
+
+.option-list { display: grid; gap: 8px; }
+
+.option-button {
+  text-align: left;
+  padding: 12px;
+  border-radius: 12px;
+  background: #faf6f2;
+  border: 1px solid transparent;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.option-button.selected {
+  background: var(--soft);
+  border-color: var(--accent);
+}
+
+.action-button {
+  width: 100%;
+  border-radius: 12px;
+  padding: 13px;
+  font-weight: bold;
+  margin-top: 8px;
+}
+
+.start-camera {
+  background: var(--accent);
+  color: white;
+}
+
+.clear-button, .camera-toggle {
+  background: #f4eee9;
+  color: var(--ink);
+}
+
+.error-message {
+  color: #c44d3c;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin-top: 12px;
+}
+
+.bottom-note {
+  color: #928780;
+  font-size: 12px;
+  line-height: 1.8;
+  text-align: center;
+  padding: 4px 0 18px;
+}
+
+@media (max-width: 760px) {
+  #work-page { padding: 14px; }
+  .workspace { grid-template-columns: 1fr; }
+  .control-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  .control-section + .control-section {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+  .control-section:last-child { grid-column: 1 / -1; }
+}
+
+@media (max-width: 430px) {
+  .control-panel { grid-template-columns: 1fr; }
+  .control-section:last-child { grid-column: auto; }
+}
+</style>
+</head>
+
+<body>
+
+<section id="home-page" class="page active">
+  <div class="home-content">
+    <div class="home-mark">☺</div>
+    <h1 class="home-title">捏捏<span>臉</span></h1>
+    <p class="home-description">
+      今天想把自己的臉捏成什麼樣子？<br>
+      拉一拉、壓一壓，創造你的專屬表情。
+    </p>
+    <button id="enter-button" class="primary-button">開始捏我的臉</button>
+    <div class="home-note">
+      需要允許使用攝影機。<br>
+      建議在光線充足的地方操作。
+    </div>
+  </div>
+</section>
+
+<section id="work-page" class="page">
+  <header class="topbar">
+    <div class="brand">捏捏<span>臉</span></div>
+    <button id="home-button" class="small-button">← 返回首頁</button>
+  </header>
+
+  <div>
+    <h2 class="work-title">開始你的臉部實驗</h2>
+    <p class="work-description">
+      對著鏡頭，用拇指和食指捏合，再移動手指，就能拉動局部畫面。
+    </p>
+  </div>
+
+  <div class="workspace">
+    <div class="camera-panel">
+      <div class="camera-stage">
+        <canvas id="output-canvas" width="640" height="480"></canvas>
+        <div id="camera-placeholder" class="camera-placeholder">
+          按下右側的「開啟攝影機」<br>
+          就可以開始捏臉。
+        </div>
+      </div>
+      <div class="camera-status">
+        <span id="status-dot" class="status-dot"></span>
+        <span id="status-text">攝影機尚未啟動</span>
+      </div>
+    </div>
+
+    <aside class="control-panel">
+      <div class="control-section">
+        <h3 class="control-heading">01｜攝影機</h3>
+        <button id="camera-button" class="action-button start-camera">開啟攝影機</button>
+        <button id="mirror-button" class="action-button camera-toggle">鏡像：開啟</button>
+        <button id="photo-button" class="action-button camera-toggle">拍下這一刻</button>
+        <p class="control-hint">
+          鏡像開啟時，畫面會像照鏡子一樣左右相反。
+        </p>
+      </div>
+
+      <div class="control-section">
+        <h3 class="control-heading">02｜捏拉操作</h3>
+        <p class="control-hint">
+          捏住拇指與食指，在臉部移動。
+          往外拉會產生拉伸，往臉部中心推則會產生凹陷。
+          放手後的效果由下方模式決定。
+        </p>
+      </div>
+
+      <div class="control-section">
+        <h3 class="control-heading">03｜放手後</h3>
+        <div class="option-list">
+          <button class="option-button selected" data-release="restore">
+            放手恢復<br>
+            <span>手指放開後，這次變形就會消失。</span>
+          </button>
+          <button class="option-button" data-release="keep">
+            保留變形<br>
+            <span>手指放開後，保留這次的變形。</span>
+          </button>
+        </div>
+        <button id="clear-button" class="action-button clear-button">清除所有變形</button>
+        <div id="error-message" class="error-message"></div>
+        <div id="photo-preview" style="display:none; margin-top:14px;">
+  <p style="font-size:13px; font-weight:bold;">你的捏臉成果</p>
+  <img id="photo-image" alt="捏臉照片"
+       style="width:100%; border-radius:12px; display:block;">
+  <button id="download-photo" class="action-button start-camera">
+    下載照片
+  </button>
+</div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="bottom-note">
+    目前的變形是畫面上的二維影像效果，不會改變真實臉部。
+  </div>
+</section>
+
+<video id="camera-video" autoplay playsinline muted style="display:none"></video>
+
+<script type="module">
+import {
+  FilesetResolver,
+  FaceLandmarker,
+  HandLandmarker
+} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+
+const homePage = document.getElementById("home-page");
+const workPage = document.getElementById("work-page");
+const video = document.getElementById("camera-video");
+const canvas = document.getElementById("output-canvas");
+const ctx = canvas.getContext("2d", { willReadFrequently: true });
+
+const placeholder = document.getElementById("camera-placeholder");
+const cameraButton = document.getElementById("camera-button");
+const mirrorButton = document.getElementById("mirror-button");
+const clearButton = document.getElementById("clear-button");
+const statusText = document.getElementById("status-text");
+const statusDot = document.getElementById("status-dot");
+const errorMessage = document.getElementById("error-message");
+
+let faceLandmarker = null;
+let handLandmarker = null;
+let cameraStream = null;
+let cameraOn = false;
+let mirrorOn = true;
+let loadingModels = false;
+let lastVideoTime = -1;
+let releaseMode = "restore";
+let activeGesture = null;
+let savedDeformations = [];
+let lastFaceFrame = null;
+
+const sourceCanvas = document.createElement("canvas");
+const sourceCtx = sourceCanvas.getContext("2d", {
+  willReadFrequently: true
+});
+
+const MAX_SIDE = 640;
+const PINCH_THRESHOLD = 0.075;
+const WARP_RADIUS = 105;
+
+function setStatus(message, ready = false) {
+  statusText.textContent = message;
+  statusDot.classList.toggle("ready", ready);
+}
+
+function showError(message) {
+  errorMessage.textContent = message || "";
+}
+
+function showPage(page) {
+  homePage.classList.remove("active");
+  workPage.classList.remove("active");
+  page.classList.add("active");
+}
+
+document.getElementById("enter-button").addEventListener("click", () => {
+  showPage(workPage);
+});
+
+document.getElementById("home-button").addEventListener("click", () => {
+  showPage(homePage);
+});
+
+mirrorButton.addEventListener("click", () => {
+  mirrorOn = !mirrorOn;
+  canvas.style.transform = mirrorOn ? "scaleX(-1)" : "none";
+  mirrorButton.textContent = mirrorOn ? "鏡像：開啟" : "鏡像：關閉";
+});
+
+document.querySelectorAll("[data-release]").forEach(button => {
+  button.addEventListener("click", () => {
+    releaseMode = button.dataset.release;
+
+    document.querySelectorAll("[data-release]").forEach(item => {
+      item.classList.toggle("selected", item === button);
+    });
+  });
+});
+
+clearButton.addEventListener("click", () => {
+  savedDeformations = [];
+  activeGesture = null;
+  showError("");
+  setStatus(cameraOn ? "已清除所有變形" : "攝影機尚未啟動", cameraOn);
+});
+
+async function loadModels() {
+  if (faceLandmarker && handLandmarker) return;
+  if (loadingModels) {
+    throw new Error("模型正在載入，請稍等一下再試。");
+  }
+
+  loadingModels = true;
+  setStatus("正在載入臉部與手部辨識模型……");
+
+  try {
+    const vision = await FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
+    );
+
+    faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath:
+          "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+        delegate: "CPU"
+      },
+      runningMode: "VIDEO",
+      numFaces: 1
+    });
+
+    handLandmarker = await HandLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath:
+          "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+        delegate: "CPU"
+      },
+      runningMode: "VIDEO",
+      numHands: 2
+    });
+  } finally {
+    loadingModels = false;
+  }
+}
+
+async function startCamera() {
+  showError("");
+
+  if (cameraOn) {
+    stopCamera();
+    return;
+  }
+
+  cameraButton.disabled = true;
+  cameraButton.textContent = "正在啟動……";
+
+  try {
+    await loadModels();
+
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: {
+        facingMode: "user",
+        width: { ideal: 640 },
+        height: { ideal: 480 }
+      }
+    });
+
+    video.srcObject = cameraStream;
+
+    await new Promise((resolve, reject) => {
+      video.onloadedmetadata = resolve;
+      video.onerror = () => reject(new Error("無法讀取攝影機畫面。"));
+    });
+
+    await video.play();
+
+    const width = video.videoWidth || 640;
+    const height = video.videoHeight || 480;
+    const scale = Math.min(1, MAX_SIDE / Math.max(width, height));
+
+    canvas.width = Math.round(width * scale);
+    canvas.height = Math.round(height * scale);
+    sourceCanvas.width = canvas.width;
+    sourceCanvas.height = canvas.height;
+
+    cameraOn = true;
+    lastVideoTime = -1;
+    lastFaceFrame = null;
+
+    placeholder.classList.add("hidden");
+    cameraButton.textContent = "關閉攝影機";
+    setStatus("攝影機已啟動，請把臉放進畫面", true);
+
+    requestAnimationFrame(renderFrame);
+  } catch (error) {
+    console.error(error);
+
+    showError(
+      "啟動失敗：" + (error.message || "未知錯誤") +
+      "\n請確認網路正常，並允許瀏覽器使用攝影機。"
+    );
+
+    setStatus("攝影機無法啟動");
+    cameraButton.textContent = "重新開啟攝影機";
+  } finally {
+    cameraButton.disabled = false;
+  }
+}
+
+function stopCamera() {
+  cameraOn = false;
+  activeGesture = null;
+
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(track => track.stop());
+    cameraStream = null;
+  }
+
+  video.srcObject = null;
+  cameraButton.textContent = "開啟攝影機";
+  placeholder.classList.remove("hidden");
+  setStatus("攝影機已關閉");
+}
+
+cameraButton.addEventListener("click", startCamera);
+
+function getFaceBounds(landmarks) {
+  if (!landmarks || !landmarks.length) return null;
+
+  let minX = 1, minY = 1, maxX = 0, maxY = 0;
+
+  for (const point of landmarks) {
+    minX = Math.min(minX, point.x);
+    minY = Math.min(minY, point.y);
+    maxX = Math.max(maxX, point.x);
+    maxY = Math.max(maxY, point.y);
+  }
+
+  const extraX = (maxX - minX) * 0.40;
+  const extraY = (maxY - minY) * 0.32;
+
+  return {
+    minX: Math.max(0, minX - extraX),
+    maxX: Math.min(1, maxX + extraX),
+    minY: Math.max(0, minY - extraY),
+    maxY: Math.min(1, maxY + extraY)
+  };
+}
+
+function isInsideFaceArea(point, bounds) {
+  if (!bounds) return false;
+
+  return (
+    point.x >= bounds.minX &&
+    point.x <= bounds.maxX &&
+    point.y >= bounds.minY &&
+    point.y <= bounds.maxY
+  );
+}
+
+function getFaceFrame(landmarks) {
+  if (!landmarks || landmarks.length < 264) return null;
+
+  const nose = landmarks[1];
+  const leftEye = landmarks[33];
+  const rightEye = landmarks[263];
+
+  const centerX = nose.x * canvas.width;
+  const centerY = nose.y * canvas.height;
+
+  const eyeX = (rightEye.x - leftEye.x) * canvas.width;
+  const eyeY = (rightEye.y - leftEye.y) * canvas.height;
+  const scale = Math.hypot(eyeX, eyeY);
+
+  if (scale < 1) return null;
+
+  const ux = eyeX / scale;
+  const uy = eyeY / scale;
+
+  return {
+    center: { x: nose.x, y: nose.y },
+    centerX,
+    centerY,
+    ux,
+    uy,
+    vx: -uy,
+    vy: ux,
+    scale
+  };
+}
+
+function toFaceLocalOperation(operation, frame) {
+  if (!operation || !frame) return null;
+
+  const px = operation.x * canvas.width - frame.centerX;
+  const py = operation.y * canvas.height - frame.centerY;
+
+  const localOperation = {
+    space: "face",
+    type: operation.type,
+    localX: (px * frame.ux + py * frame.uy) / frame.scale,
+    localY: (px * frame.vx + py * frame.vy) / frame.scale,
+    radiusLocal: (operation.radius || WARP_RADIUS) / frame.scale
+  };
+
+  if (operation.type === "dent") {
+    localOperation.strengthLocal =
+      (operation.strength || 22) / frame.scale;
+  } else {
+    const dx = operation.dx || 0;
+    const dy = operation.dy || 0;
+
+    localOperation.dxLocal =
+      (dx * frame.ux + dy * frame.uy) / frame.scale;
+
+    localOperation.dyLocal =
+      (dx * frame.vx + dy * frame.vy) / frame.scale;
+  }
+
+  return localOperation;
+}
+
+function fromFaceLocalOperation(operation, frame) {
+  if (!operation || !frame) return null;
+
+  const px = frame.centerX +
+    (operation.localX * frame.ux + operation.localY * frame.vx) *
+    frame.scale;
+
+  const py = frame.centerY +
+    (operation.localX * frame.uy + operation.localY * frame.vy) *
+    frame.scale;
+
+  const result = {
+    type: operation.type,
+    x: px / canvas.width,
+    y: py / canvas.height,
+    radius: operation.radiusLocal * frame.scale
+  };
+
+  if (operation.type === "dent") {
+    result.strength = (operation.strengthLocal || 0) * frame.scale;
+  } else {
+    result.dx =
+      (operation.dxLocal * frame.ux + operation.dyLocal * frame.vx) *
+      frame.scale;
+
+    result.dy =
+      (operation.dxLocal * frame.uy + operation.dyLocal * frame.vy) *
+      frame.scale;
+  }
+
+  return result;
+}
+
+function distance(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function findPinch(handResults, faceBounds) {
+  if (!handResults?.landmarks) return null;
+
+  for (const hand of handResults.landmarks) {
+    const thumb = hand[4];
+    const index = hand[8];
+
+    if (!thumb || !index) continue;
+
+    const gap = distance(thumb, index);
+    const middle = {
+      x: (thumb.x + index.x) / 2,
+      y: (thumb.y + index.y) / 2
+    };
+
+    if (
+      gap < PINCH_THRESHOLD &&
+      isInsideFaceArea(middle, faceBounds)
+    ) {
+      return middle;
+    }
+  }
+
+  return null;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function applyWarp(imageData, operation) {
+  const width = imageData.width;
+  const height = imageData.height;
+  const output = imageData.data;
+  const original = new Uint8ClampedArray(output);
+
+  const cx = operation.x * width;
+  const cy = operation.y * height;
+  const radius = operation.radius || WARP_RADIUS;
+
+  const minX = clamp(Math.floor(cx - radius), 0, width - 1);
+  const maxX = clamp(Math.ceil(cx + radius), 0, width - 1);
+  const minY = clamp(Math.floor(cy - radius), 0, height - 1);
+  const maxY = clamp(Math.ceil(cy + radius), 0, height - 1);
+
+  for (let y = minY; y <= maxY; y++) {
+    for (let x = minX; x <= maxX; x++) {
+      const dx = x - cx;
+      const dy = y - cy;
+      const dist = Math.hypot(dx, dy);
+
+      if (dist >= radius) continue;
+
+      const falloff = Math.pow(1 - dist / radius, 2);
+
+      let sx, sy;
+
+      if (operation.type === "dent") {
+        const push = (operation.strength || 22) * falloff;
+        const safeDist = Math.max(1, dist);
+
+        sx = x + (dx / safeDist) * push;
+        sy = y + (dy / safeDist) * push;
+      } else {
+        sx = x - (operation.dx || 0) * falloff;
+        sy = y - (operation.dy || 0) * falloff;
+      }
+
+      sx = clamp(sx, 0, width - 1);
+      sy = clamp(sy, 0, height - 1);
+
+      const x0 = Math.floor(sx);
+      const y0 = Math.floor(sy);
+      const x1 = Math.min(width - 1, x0 + 1);
+      const y1 = Math.min(height - 1, y0 + 1);
+
+      const fx = sx - x0;
+      const fy = sy - y0;
+
+      const outIndex = (y * width + x) * 4;
+      const i00 = (y0 * width + x0) * 4;
+      const i10 = (y0 * width + x1) * 4;
+      const i01 = (y1 * width + x0) * 4;
+      const i11 = (y1 * width + x1) * 4;
+
+      for (let c = 0; c < 3; c++) {
+        const top =
+          original[i00 + c] * (1 - fx) +
+          original[i10 + c] * fx;
+
+        const bottom =
+          original[i01 + c] * (1 - fx) +
+          original[i11 + c] * fx;
+
+        output[outIndex + c] =
+          top * (1 - fy) + bottom * fy;
+      }
+
+      output[outIndex + 3] = 255;
+    }
+  }
+}
+
+function makeOperation(gesture, point, faceFrame) {
+  if (!faceFrame) return null;
+
+  const dx = (point.x - gesture.start.x) * canvas.width;
+  const dy = (point.y - gesture.start.y) * canvas.height;
+
+  const startX =
+    (gesture.start.x - faceFrame.center.x) * canvas.width;
+
+  const startY =
+    (gesture.start.y - faceFrame.center.y) * canvas.height;
+
+  const direction = startX * dx + startY * dy;
+
+  if (direction < 0) {
+    return {
+      type: "dent",
+      x: point.x,
+      y: point.y,
+      radius: WARP_RADIUS,
+      strength: Math.min(45, 22 + Math.hypot(dx, dy) * 0.25)
+    };
+  }
+
+  return {
+    type: "pull",
+    x: gesture.start.x,
+    y: gesture.start.y,
+    dx,
+    dy,
+    radius: WARP_RADIUS
+  };
+}
+
+function updateGesture(point, faceFrame) {
+  if (!point) {
+    if (activeGesture) {
+      if (
+        releaseMode === "keep" &&
+        activeGesture.moved &&
+        activeGesture.operation
+      ) {
+        const frameToUse = faceFrame || lastFaceFrame;
+
+        const savedOperation = toFaceLocalOperation(
+          activeGesture.operation,
+          frameToUse
+        );
+
+        if (savedOperation) {
+          savedDeformations.push(savedOperation);
+        }
+      }
+
+      activeGesture = null;
+    }
+
+    return;
+  }
+
+  if (!faceFrame) return;
+
+  if (!activeGesture) {
+    activeGesture = {
+      start: { x: point.x, y: point.y },
+      moved: false,
+      operation: null
+    };
+  }
+
+  const movement = distance(activeGesture.start, point);
+
+  if (movement * canvas.width > 2) {
+    activeGesture.moved = true;
+  }
+
+  activeGesture.operation = makeOperation(
+    activeGesture,
+    point,
+    faceFrame
+  );
+}
+
+function renderFrame() {
+  if (!cameraOn) return;
+
+  if (video.readyState >= 2 && video.currentTime !== lastVideoTime) {
+    lastVideoTime = video.currentTime;
+
+    sourceCtx.drawImage(
+      video,
+      0,
+      0,
+      sourceCanvas.width,
+      sourceCanvas.height
+    );
+
+    const imageData = sourceCtx.getImageData(
+      0, 0, sourceCanvas.width, sourceCanvas.height
+    );
+
+    let faceBounds = null;
+    let pinchPoint = null;
+    let currentFaceFrame = null;
+
+    try {
+      const now = performance.now();
+
+      const faceResults = faceLandmarker.detectForVideo(video, now);
+      const handResults = handLandmarker.detectForVideo(video, now);
+
+      if (faceResults.faceLandmarks?.length) {
+        const faceLandmarks = faceResults.faceLandmarks[0];
+
+        faceBounds = getFaceBounds(faceLandmarks);
+        currentFaceFrame = getFaceFrame(faceLandmarks);
+
+        if (currentFaceFrame) {
+          lastFaceFrame = currentFaceFrame;
+        }
+      }
+
+      pinchPoint = findPinch(handResults, faceBounds);
+
+      if (pinchPoint) {
+        updateGesture(pinchPoint, currentFaceFrame);
+      } else {
+        updateGesture(null, currentFaceFrame || lastFaceFrame);
+      }
+
+      if (!faceBounds) {
+        setStatus("請讓臉完整出現在畫面中", true);
+      } else if (!pinchPoint && !activeGesture) {
+        setStatus("捏合拇指與食指，開始拉動臉部", true);
+      } else {
+        setStatus("正在變形……", true);
+      }
+    } catch (error) {
+      console.error("辨識錯誤：", error);
+      setStatus("正在辨識畫面……");
+    }
+
+    // 固定變形會依照目前的人臉位置、角度及大小重新定位。
+    const frameForSaved = currentFaceFrame || lastFaceFrame;
+
+    if (frameForSaved) {
+      for (const operation of savedDeformations) {
+        const currentOperation = fromFaceLocalOperation(
+          operation,
+          frameForSaved
+        );
+
+        if (currentOperation) {
+          applyWarp(imageData, currentOperation);
+        }
+      }
+    }
+
+    if (activeGesture?.operation) {
+      applyWarp(imageData, activeGesture.operation);
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+  }
+
+  requestAnimationFrame(renderFrame);
+}
+
+window.addEventListener("beforeunload", () => {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(track => track.stop());
+  }
+});
+// 拍照功能
+const photoButton = document.getElementById("photo-button");
+const photoPreview = document.getElementById("photo-preview");
+const photoImage = document.getElementById("photo-image");
+const downloadPhotoButton = document.getElementById("download-photo");
+
+let latestPhotoUrl = null;
+
+photoButton.addEventListener("click", () => {
+  if (!cameraOn) {
+    showError("請先開啟攝影機，再進行拍照。");
+    return;
+  }
+
+  // 複製目前畫面，避免影響正在運作的捏臉畫布
+  const photoCanvas = document.createElement("canvas");
+  photoCanvas.width = canvas.width;
+  photoCanvas.height = canvas.height;
+
+  const photoCtx = photoCanvas.getContext("2d");
+
+  // 將目前已完成的變形畫面畫進照片
+  if (mirrorOn) {
+    photoCtx.translate(photoCanvas.width, 0);
+    photoCtx.scale(-1, 1);
+  }
+
+  photoCtx.drawImage(canvas, 0, 0);
+
+  // 產生照片
+  photoCanvas.toBlob((blob) => {
+    if (!blob) {
+      showError("拍照失敗，請再試一次。");
+      return;
+    }
+
+    if (latestPhotoUrl) {
+      URL.revokeObjectURL(latestPhotoUrl);
+    }
+
+    latestPhotoUrl = URL.createObjectURL(blob);
+    photoImage.src = latestPhotoUrl;
+    photoPreview.style.display = "block";
+    showError("");
+
+    photoPreview.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest"
+    });
+  }, "image/png");
+});
+
+downloadPhotoButton.addEventListener("click", () => {
+  if (!latestPhotoUrl) return;
+
+  const link = document.createElement("a");
+  link.href = latestPhotoUrl;
+  link.download = "我的捏臉成果.png";
+  link.click();
+});
+</script>
+</body>
+</html>
